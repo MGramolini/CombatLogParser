@@ -12,8 +12,8 @@ namespace CombatLogParser.Examples
     public class LiveParsing
     {
         private FileInfo _fileInfo;
-        private CombatLogParser _clp;
         private FileSystemWatcher _fsw;
+        public CombatLogParser LogParser {get;set;}
 
         /// <summary>
         /// This class will live-read a combat log found at FilePath and print to the console any time it finds a UNIT_DIED event
@@ -26,18 +26,12 @@ namespace CombatLogParser.Examples
             }
 
             _fileInfo = new FileInfo(FilePath);
-            _clp = new CombatLogParser(FilePath);
+            LogParser = new CombatLogParser(FilePath);
 
             //Set initial position to 0 to parse existing file before live monitoring, or _fileInfo.Length to skip existing file and only read future changes
             long lastSeekPos = _fileInfo.Length;
-            _clp.PreParseEvent += (clp, fs) => { fs.Position = lastSeekPos; };
-            _clp.PostParseEvent += (clp, fs) => { lastSeekPos = fs.Position; };
-
-            _clp.RegisterEvent((s, e) =>
-            {
-                string name = e.Get(UNIT_DIED.UnitName);
-                Console.WriteLine($"Unit {name} died");
-            }, Events.UNIT_DIED);
+            LogParser.PreParseEvent += (clp, fs) => { fs.Position = lastSeekPos; };
+            LogParser.PostParseEvent += (clp, fs) => { lastSeekPos = fs.Position; };
 
             _fsw = new FileSystemWatcher();
             _fsw.Path = _fileInfo.DirectoryName;
@@ -46,13 +40,13 @@ namespace CombatLogParser.Examples
             _fsw.EnableRaisingEvents = true;
             _fsw.Changed += (x, y) =>
             {
-                _clp.ParseToEnd();
+                LogParser.ParseToEnd();
             };
 
             
             if (lastSeekPos != _fileInfo.Length)
             {
-                _clp.ParseToEnd();
+                LogParser.ParseToEnd();
             }
         }
     }
